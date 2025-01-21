@@ -1,104 +1,5 @@
-import { useState } from 'react';
-
-// Types definition for better TypeScript support
-type InputType = 'text' | 'date' | 'time' | 'textarea' | 'checkbox';
-
-interface FormField {
-  label: string;
-  type: InputType;
-  required?: boolean;
-  colSpan?: number;
-  width?: 'full' | 'half';
-}
-
-interface FormConfig {
-  [key: string]: FormField;
-}
-
-// Reusable Input component
-const FormInput = ({
-  label,
-  name,
-  type,
-  value,
-  onChange,
-  required = false,
-  width = 'full'
-}: {
-  label: string;
-  name: string;
-  type: InputType;
-  value: string | boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  required?: boolean;
-  width?: 'full' | 'half';
-}) => {
-  const baseInputClasses = "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline";
-  
-  if (type === 'checkbox') {
-    return (
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          name={name}
-          checked={value as boolean}
-          onChange={onChange}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        />
-        <label className="ml-2 block text-sm text-gray-900">
-          {label}
-        </label>
-      </div>
-    );
-  }
-
-  if (type === 'textarea') {
-    return (
-      <div className={`${width === 'half' ? 'flex-1' : 'w-full'}`}>
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          {label}
-        </label>
-        <textarea
-          name={name}
-          value={value as string}
-          onChange={onChange}
-          className={baseInputClasses}
-          required={required}
-          rows={3}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${width === 'half' ? 'flex-1' : 'w-full'}`}>
-      <label className="block text-gray-700 text-sm font-bold mb-2">
-        {label}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value as string}
-        onChange={onChange}
-        className={baseInputClasses}
-        required={required}
-      />
-    </div>
-  );
-};
-
-// Form configuration object
-const formConfig: FormConfig = {
-  date: { label: 'Date', type: 'date', required: true },
-  aircraftType: { label: 'Aircraft Type', type: 'text', required: true },
-  registration: { label: 'Registration', type: 'text', required: true },
-  departure: { label: 'Departure', type: 'text', required: true },
-  arrival: { label: 'Arrival', type: 'text', required: true },
-  departureTime: { label: 'Departure Time', type: 'time', required: true, width: 'half' },
-  arrivalTime: { label: 'Arrival Time', type: 'time', required: true, width: 'half' },
-  remarks: { label: 'Remarks', type: 'textarea', colSpan: 2 },
-  pilotInCommand: { label: 'Pilot in Command', type: 'checkbox' }
-};
+import { useState, useCallback } from 'react';
+import {produce} from "immer";
 
 const FlightEntryForm = () => {
   const [flightData, setFlightData] = useState({
@@ -114,18 +15,35 @@ const FlightEntryForm = () => {
     remarks: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     console.log('Flight data:', flightData);
-  };
+  },
+  [flightData]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFlightData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
-  };
+  },
+  []);
+
+  const handleChangeImmer = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFlightData(
+      produce(draft => {
+        if(type === 'checkbox') {
+          draft.pilotInCommand = (e.target as HTMLInputElement).checked;
+        }
+        else {
+          draft.aircraftType = name + value;
+        }
+    }));
+  },
+  []);
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -134,35 +52,134 @@ const FlightEntryForm = () => {
           <h2 className="text-2xl font-bold mb-6">New Flight Entry</h2>
           
           <div className="grid grid-cols-2 gap-4">
-            {Object.entries(formConfig).map(([fieldName, config]) => {
-              if (config.type === 'checkbox') {
-                return null; // We'll handle checkbox separately
-              }
-              
-              return (
-                <div key={fieldName} className={`col-span-${config.colSpan || 1}`}>
-                  <FormInput
-                    label={config.label}
-                    name={fieldName}
-                    type={config.type}
-                    value={flightData[fieldName as keyof typeof flightData]}
+            <div className="col-span-1">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Date
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={flightData.date}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
+            </div>
+
+            <div className="col-span-1">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Aircraft Type
+              </label>
+              <input
+                type="text"
+                name="aircraftType"
+                value={flightData.aircraftType}
+                onChange={handleChangeImmer}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
+            </div>
+
+            <div className="col-span-1">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Registration
+              </label>
+              <input
+                type="text"
+                name="registration"
+                value={flightData.registration}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
+            </div>
+
+            <div className="col-span-1">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Departure
+              </label>
+              <input
+                type="text"
+                name="departure"
+                value={flightData.departure}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
+            </div>
+
+            <div className="col-span-1">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Arrival
+              </label>
+              <input
+                type="text"
+                name="arrival"
+                value={flightData.arrival}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex justify-between gap-4">
+                <div className="flex-1">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Departure Time
+                  </label>
+                  <input
+                    type="time"
+                    name="departureTime"
+                    value={flightData.departureTime}
                     onChange={handleChange}
-                    required={config.required}
-                    width={config.width}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
                   />
                 </div>
-              );
-            })}
+                <div className="flex-1">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Arrival Time
+                  </label>
+                  <input
+                    type="time"
+                    name="arrivalTime"
+                    value={flightData.arrivalTime}
+                    onChange={handleChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Remarks
+              </label>
+              <textarea
+                name="remarks"
+                value={flightData.remarks}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                rows={3}
+              />
+            </div>
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <FormInput
-              label={formConfig.pilotInCommand.label}
-              name="pilotInCommand"
-              type="checkbox"
-              value={flightData.pilotInCommand}
-              onChange={handleChange}
-            />
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="pilotInCommand"
+                checked={flightData.pilotInCommand}
+                onChange={handleChange}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label className="ml-2 block text-sm text-gray-900">
+                Pilot in Command
+              </label>
+            </div>
             <button
               type="submit"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
