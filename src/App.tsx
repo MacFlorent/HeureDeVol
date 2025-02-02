@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import FlightEntryForm from './components/FlightEntryForm.tsx';
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import FormFlight from "./components/FormFlight";
 
 function App() {
   return (
@@ -23,7 +23,7 @@ function App() {
 
         <div className="container mx-auto px-4 py-8">
           <Routes>
-            <Route path="/new-flight" element={<FlightEntryForm />} />
+            <Route path="/new-flight" element={<FormFlight />} />
             <Route path="/" element={<div>Dashboard (Coming soon)</div>} />
           </Routes>
         </div>
