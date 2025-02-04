@@ -1,90 +1,68 @@
 import { useReducer, useCallback } from "react";
 import { produce } from "immer";
 
-import { StateInterface, StateAction, StateActionName } from "./StateManager";
+import { StateForm, ReducerAction, ReducerActionName } from "./StateManager";
 import { ComponentField } from "./ComponentField";
 
-const initialState: StateInterface = {
+const initialState: StateForm = {
   fields: {
-    aircraftType: "",
-    registration: "",
-    departure: "",
-    arrival: "",
-    departureTime: "",
-    arrivalTime: "",
-    totalTime: "",
-    pilotInCommand: true,
-    remarks: ""    
-  },
-  touched: {
-    aircraftType: false,
-    registration: false,
-    departure: false,
-    arrival: false,
-    departureTime: false,
-    arrivalTime: false,
-    totalTime: false,
-    pilotInCommand: false,
-    remarks: false  
-  },
-  errors: {
-    aircraftType: "",
-    registration: "",
-    departure: "",
-    arrival: "",
-    departureTime: "",
-    arrivalTime: "",
-    totalTime: "",
-    pilotInCommand: "",
-    remarks: "" 
+    aircraftType: { name: "aircraftType", label: "Aircraft type", value: "", type: "text", error: "", touched: false },
+    registration: { name: "registration", label: "Registration", value: "", type: "text", error: "", touched: false },
+    departure: { name: "departure", label: "Departure airfield", value: "", type: "text", error: "", touched: false },
+    arrival: { name: "arrival", label: "Arrival airfield", value: "", type: "text", error: "", touched: false },
+    departureTime: { name: "departureTime", label: "Departure time", value: "", type: "datetime-local", error: "", touched: false },
+    arrivalTime: { name: "arrivalTime", label: "Arrival time", value: "", type: "datetime-local", error: "", touched: false },
+    totalTime: { name: "totalTime", label: "Total time", value: "", type: "number", error: "", touched: false },
+    pilotInCommand: { name: "pilotInCommand", label: "Pilot in command", value: true, type: "checkbox", error: "", touched: false },
+    remarks: { name: "remarks", label: "Remarks", value: "", type: "text", error: "", touched: false },
   },
   isSubmitting: false,
 };
 
 const validateField = (field: string, value: string): string => {
   switch (field) {
-    case "username":
+    case "aircraftType":
       return value.length < 3 ? "Username must be at least 3 characters" : "";
-    case "email":
+    case "departureTime":
       return !value.includes("@") ? "Please enter a valid email" : "";
-    case "password":
+    case "arrivalTime":
       return value.length < 6 ? "Password must be at least 6 characters" : "";
     default:
       return "";
   }
 };
 
-const formReducer = produce((draft: StateInterface, action: StateAction) => {
+const formReducer = produce((draft: StateForm, action: ReducerAction) => {
   switch (action.type) {
-    case StateActionName.FieldChange: {
+    case ReducerActionName.FieldChange: {
       const { field, value } = action.payload;
-      draft.fields[field] = value;
-      draft.errors[field] = validateField(field, value);
+      draft.fields[field].value = value;
+      draft.fields[field].error = validateField(field, value);
       break;
     }
     
-    case StateActionName.FieldBlur: {
+    case ReducerActionName.FieldBlur: {
       const { field } = action.payload;
-      draft.touched[field] = true;
+      draft.fields[field].touched = true;
       break;
     }
     
-    case StateActionName.FormSubmit: {
+    case ReducerActionName.FormSubmit: {
       draft.isSubmitting = true;
       break;
     }
     
-    case StateActionName.FormSubmitSuccess: {
+    case ReducerActionName.FormSubmitSuccess: {
       return initialState;
     }
     
-    case StateActionName.FormSubmitError: {
+    case ReducerActionName.FormSubmitError: {
       draft.isSubmitting = false;
-      draft.errors = action.payload.errors;
+      //draft.errors = action.payload.errors;
       break;
     }
     
-    case StateActionName.FormReset: {
+    case ReducerActionName.FormReset: {
       return initialState;
     }
   }
@@ -96,7 +74,7 @@ const FormFlight = () => {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     dispatch({
-      type: StateActionName.FieldChange,
+      type: ReducerActionName.FieldChange,
       payload: { field: name, value },
     });
   }, []);
@@ -104,121 +82,81 @@ const FormFlight = () => {
   const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     const { name } = e.target;
     dispatch({
-      type: StateActionName.FieldBlur,
+      type: ReducerActionName.FieldBlur,
       payload: { field: name },
     });
   }, []);
   
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    /*
     const hasErrors = Object.values(state.errors).some(error => error !== "");
     if (hasErrors) return;
     
-    dispatch({ type: StateActionName.FormSubmit });
+    dispatch({ type: StateReducerActionName.FormSubmit });
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      dispatch({ type: StateActionName.FormSubmitSuccess });
+      dispatch({ type: StateReducerActionName.FormSubmitSuccess });
       alert("Form submitted successfully!");
     } catch (error) {
       dispatch({
-        type: StateActionName.FormSubmitError,
+        type: StateReducerActionName.FormSubmitError,
         payload: { errors: initialState.errors },
       });
-    }
+    }*/
   }, [state.errors]);
   
   const handleReset = useCallback(() => {
-    dispatch({ type: StateActionName.FormReset });
+    dispatch({ type: ReducerActionName.FormReset });
   }, []);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <ComponentField
-        name="aircraftType"
-        type="text"
-        label="Aircraft type"
-        value={state.fields.aircraftType}
-        error={state.errors.aircraftType}
-        touched={state.touched.aircraftType}
+        stateField={state.fields.aircraftType}
         onChange={handleChange}
         onBlur={handleBlur}
       />
       
       <ComponentField
-        name="registration"
-        type="text"
-        label="Aircraft registration"
-        value={state.fields.registration}
-        error={state.errors.registration}
-        touched={state.touched.registration}
+        stateField={state.fields.registration}
         onChange={handleChange}
         onBlur={handleBlur}
       />
 
       <ComponentField
-        name="departure"
-        type="text"
-        label="Departure airfield"
-        value={state.fields.departure}
-        error={state.errors.departure}
-        touched={state.touched.departure}
+        stateField={state.fields.departure}
         onChange={handleChange}
         onBlur={handleBlur}
       />
 
       <ComponentField
-        name="arrival"
-        type="text"
-        label="Arrival airfield"
-        value={state.fields.arrival}
-        error={state.errors.arrival}
-        touched={state.touched.arrival}
+        stateField={state.fields.arrival}
         onChange={handleChange}
         onBlur={handleBlur}
       />
 
       <ComponentField
-        name="departureTime"
-        type="datetime"
-        label="Departure time"
-        value={state.fields.departureTime}
-        error={state.errors.departureTime}
-        touched={state.touched.departureTime}
+        stateField={state.fields.departureTime}
         onChange={handleChange}
         onBlur={handleBlur}
       />
       
       <ComponentField
-        name="arrivalTime"
-        type="datetime"
-        label="Arrival time"
-        value={state.fields.arrivalTime}
-        error={state.errors.arrivalTime}
-        touched={state.touched.arrivalTime}
+        stateField={state.fields.arrivalTime}
         onChange={handleChange}
         onBlur={handleBlur}
       />
 
       <ComponentField
-        name="pilotInCommand"
-        type="checkbox"
-        label="Pilot in command"
-        value={state.fields.pilotInCommand}
-        error={state.errors.pilotInCommand}
-        touched={state.touched.pilotInCommand}
+        stateField={state.fields.pilotInCommand}
         onChange={handleChange}
         onBlur={handleBlur}
       />
 
       <ComponentField
-        name="remarks"
-        type="text"
-        label="Remarks"
-        value={state.fields.remarks}
-        error={state.errors.remarks}
-        touched={state.touched.remarks}
+        stateField={state.fields.remarks}
         onChange={handleChange}
         onBlur={handleBlur}
       />

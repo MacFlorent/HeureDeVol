@@ -1,15 +1,18 @@
-export interface StateFields { [key: string]: string | boolean } // type Record<string, string>;
-export interface StateTouched { [key: string]: boolean } // type Record<string, boolean>;
-export interface StateErrors { [key: string]: string } // type  Record<string, string>;
+export interface StateField {
+  name: string;
+  label: string;
+  value: string | boolean;
+  type: string;
+  error: string | null;
+  touched: boolean;
+}
 
-export interface StateInterface {
-  fields: StateFields;
-  touched: StateTouched;
-  errors: StateErrors;
+export interface StateForm {
+  fields: Record<string, StateField>; //  { [key: string]: StateOfField } 
   isSubmitting: boolean;
 }
 
-export enum StateActionName { 
+export enum ReducerActionName { 
     FieldChange = "FIELD_CHANGE", 
     FieldBlur = "FIELD_BLUR", 
     FormSubmit = "FORM_SUBMIT", 
@@ -18,10 +21,10 @@ export enum StateActionName {
     FormReset = "RESET_FORM",  
   }
 
-export type StateAction = 
-  | { type: StateActionName.FieldChange; payload: { field: string; value: string } }
-  | { type: StateActionName.FieldBlur; payload: { field: string } }
-  | { type: StateActionName.FormSubmit }
-  | { type: StateActionName.FormSubmitSuccess }
-  | { type: StateActionName.FormSubmitError; payload: { errors: StateErrors } }
-  | { type: StateActionName.FormReset };
+export type ReducerAction = 
+  | { type: ReducerActionName.FieldChange; payload: { field: string; value: string } }
+  | { type: ReducerActionName.FieldBlur; payload: { field: string } }
+  | { type: ReducerActionName.FormSubmit }
+  | { type: ReducerActionName.FormSubmitSuccess }
+  | { type: ReducerActionName.FormSubmitError; payload: { field: string; error: string } }
+  | { type: ReducerActionName.FormReset };

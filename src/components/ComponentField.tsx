@@ -1,42 +1,48 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
+
+import { StateField } from "./StateManager";
 
 export interface ComponentFieldProps {
-  name: string;
-  type: string;
-  label: string;
-  value: string | boolean;
-  error: string;
-  touched: boolean;
+  stateField: StateField;
   onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const ComponentField = memo(({ 
-  name, 
-  type, 
-  label, 
-  value, 
-  error, 
-  touched, 
-  onBlur, 
-  onChange 
-}: ComponentFieldProps) => (
-  <div>
-    <label className="block text-sm font-medium mb-1">
-      {label}:
+export const ComponentField = memo(({ stateField, onBlur, onChange }: ComponentFieldProps) => {
+  const commonWrapper = useCallback((inputElement: React.ReactElement<HTMLInputElement>) => (
+    <div>
+        <label className="block text-sm font-medium mb-1">
+          {stateField.label}:
+          {inputElement}
+        </label>
+        {stateField.touched && stateField.error && (<p className="text-red-500 text-sm mt-1">{stateField.error}</p>)}
+      </div>
+  ), [stateField.label, stateField.touched, stateField.error]);
+
+  if (stateField.type === "checkbox") {
+    return commonWrapper(
       <input
-        type={type}
-        name={name}
-        value={value}
+        type="checkbox"
+        name={stateField.name}
+        checked={Boolean(stateField.value)}
         onChange={onChange}
         onBlur={onBlur}
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
       />
-    </label>
-    {touched && error && (
-      <p className="text-red-500 text-sm mt-1">{error}</p>
-    )}
-  </div>
-));
+    );
+  }
+  else {
+    return commonWrapper(
+      <input
+        type={stateField.type}
+        name={stateField.name}
+        value={String(stateField.value)}
+        onChange={onChange}
+        onBlur={onBlur}
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+    />
+    );
+  }
+});
 
 ComponentField.displayName = "ComponentField";
